@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="kylin_old_color">#008c96</color>
+    <color name="kylin_main_color">#4e7d96</color>
+    <color name="kylin_second_color">#ff844b</color>
+    <color name="kylin_third_color">#e3edf2</color>
+    <color name="kylin_white">#FFFFFF</color>
+</resources>
