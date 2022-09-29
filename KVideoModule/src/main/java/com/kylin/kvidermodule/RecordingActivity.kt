@@ -19,6 +19,7 @@ import com.kylin.libkcommons.widget.RecordingView
 import java.lang.Exception
 import androidx.camera.core.*
 import androidx.camera.video.*
+import androidx.camera.video.VideoCapture
 
 
 @Route(path = "/video/activity/recording")
@@ -32,7 +33,7 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
     private var cameraSelector : CameraSelector ?= null
     private var cameraProvider : ProcessCameraProvider ?= null
     private var preview : Preview ?= null
-    private var videoCapture : androidx.camera.video.VideoCapture<Recorder> ?= null
+    private var videoCapture : VideoCapture<Recorder>?= null
     private var cameraOrientation = CameraSelector.LENS_FACING_BACK
 
     // todo 图像分析，会一直回调，可以在用它来配合编码器
@@ -77,7 +78,7 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
 //            .setQualitySelector(qualitySelector)
 //            .setQualitySelector(Recorder.DEFAULT_QUALITY_SELECTOR)  // 默认就是这个吧
             .build()
-        videoCapture =  androidx.camera.video.VideoCapture.withOutput(recorder)
+        videoCapture = VideoCapture.withOutput(recorder)
     }
 
     private fun initImageAnalysis(){
@@ -125,9 +126,13 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
             cameraProvider?.unbindAll()
             suview = previewView?.surfaceProvider
             preview = Preview.Builder().build()
+//            camera = cameraProvider?.bindToLifecycle(this as LifecycleOwner, cameraSelector!!,
+//                videoCapture, imageAnalysis, preview)
             camera = cameraProvider?.bindToLifecycle(this as LifecycleOwner, cameraSelector!!,
-                videoCapture, imageAnalysis, preview)
-            preview?.setSurfaceProvider(suview)
+                imageAnalysis, preview)
+//            camera = cameraProvider?.bindToLifecycle(this as LifecycleOwner, cameraSelector!!,
+//                preview)
+            preview!!.setSurfaceProvider(suview)
         }catch (e : Exception){
             e.printStackTrace()
         }

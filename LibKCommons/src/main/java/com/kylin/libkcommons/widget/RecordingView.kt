@@ -38,7 +38,9 @@ class RecordingView @JvmOverloads constructor(
         paint?.isAntiAlias = true
         paint2?.color = context.resources.getColor(R.color.kylin_white)
         paint2?.style = Paint.Style.FILL
+        paint2?.isAntiAlias = true
         paint3?.color = context.resources.getColor(R.color.kylin_white)
+        paint3?.isAntiAlias = true
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
