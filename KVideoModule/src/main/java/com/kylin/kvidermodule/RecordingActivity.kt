@@ -2,11 +2,17 @@ package com.kylin.kvidermodule
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
+import android.graphics.ImageFormat
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.widget.ImageView
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.MediaStoreOutputOptions
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -16,10 +22,8 @@ import com.kylin.kvidermodule.viewmodel.RecordingActivityViewModel
 import com.kylin.libkbase.base.KBaseViewModel
 import com.kylin.libkbase.base.KVmActivity
 import com.kylin.libkcommons.widget.RecordingView
-import java.lang.Exception
-import androidx.camera.core.*
-import androidx.camera.video.*
-import androidx.camera.video.VideoCapture
+import java.nio.ByteBuffer
+import java.util.concurrent.locks.ReentrantLock
 
 
 @Route(path = "/video/activity/recording")
@@ -40,6 +44,7 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
     private var imageAnalysis : ImageAnalysis ?= null
 
     private var recording : Recording ?= null
+    private val lock = ReentrantLock()
 
     override fun initView() {
         previewView = findViewById(R.id.pv_content)
@@ -70,10 +75,6 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
     }
 
     private fun initRecording(){
-//        val mList : MutableList<Quality> = mutableListOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD)
-//        val qualitySelector = QualitySelector.fromOrderedList(
-//            mList,
-//            FallbackStrategy.lowerQualityOrHigherThan(Quality.SD))
         val recorder = Recorder.Builder()
 //            .setQualitySelector(qualitySelector)
 //            .setQualitySelector(Recorder.DEFAULT_QUALITY_SELECTOR)  // 默认就是这个吧
@@ -83,16 +84,38 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
 
     private fun initImageAnalysis(){
         imageAnalysis = ImageAnalysis.Builder()
-            // enable the following line if RGBA output is needed.
-            // .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
             .setTargetResolution(Size(1280, 720))
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .build()
         imageAnalysis?.setAnalyzer(ContextCompat.getMainExecutor(this), ImageAnalysis.Analyzer { imageProxy ->
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
             // insert your code here.
-            Log.v("mmp" , "图像分析回调")
+            // 查看日志打印，发现一秒回调30次，那就是30帧
+            val format = imageProxy.format
+            ImageFormat.YUV_420_888
+            Log.v("mmp" , "图像分析格式  "+format)
             // after done, release the ImageProxy object
+            // todo 看打印好像锁不住，没打印=========就已经开始打印采样模式了，换线程池来试试
+            lock.lock()
+                val planes: Array<ImageProxy.PlaneProxy> = imageProxy.planes
+                val pixelStride = planes[0].pixelStride
+                val pixelStride2 = planes[1].pixelStride
+                Log.v("mmp", "采样模式 $pixelStride  $pixelStride2")
+
+                val y : ByteBuffer = planes[0].buffer
+                val row = ByteArray(1280)
+                for (i in 0 .. 720) {
+                    y.get(row)
+                    Log.v("mmp", "${row.toString()}")
+                }
+                Log.v("mmp","================")
+                var u : ByteBuffer? = null
+                if (pixelStride2 == 1) {
+                    u = planes[1].buffer // U数据
+                } else if (pixelStride2 == 2) {
+                    val uBuffer = planes[1].buffer
+                }
+            lock.unlock()
             imageProxy.close()
         })
     }
