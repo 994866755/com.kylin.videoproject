@@ -94,9 +94,11 @@ class RecordingActivity : KVmActivity<RecordingActivityViewModel>() {
             val format = imageProxy.format
             ImageFormat.YUV_420_888
             Log.v("mmp" , "图像分析格式  "+format)
+            Log.v("mmp" , "线程ID  "+Thread.currentThread().getId())
             // after done, release the ImageProxy object
-            // todo 看打印好像锁不住，没打印=========就已经开始打印采样模式了，换线程池来试试
-            lock.lock()
+            // todo 是同个线程，但好像ByteBuffer是NIO，导致单个线程也会出现多线程混乱的情况，
+            // todo 会重复打印“图像分析格式”和"${row.toString()}"
+            lock.lock() // 这里如果用不可重入锁是不是屌炸了
                 val planes: Array<ImageProxy.PlaneProxy> = imageProxy.planes
                 val pixelStride = planes[0].pixelStride
                 val pixelStride2 = planes[1].pixelStride
